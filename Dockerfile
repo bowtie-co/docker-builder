@@ -10,6 +10,8 @@ RUN mkdir -p $BOWTIE_BIN
 
 COPY bin/* $BOWTIE_BIN/
 
+ENV PATH $BOWTIE_BIN:$PATH
+
 COPY entrypoint.sh /
 
 ENTRYPOINT [ "/entrypoint.sh" ]
