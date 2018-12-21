@@ -30,9 +30,6 @@ if should_deploy_branch $BUILD_BRANCH; then
   echo "Logging into ECR..."
   `aws ecr get-login --no-include-email --region $AWS_REGION`
 
-  echo "Pulling latest from ECR..."
-  docker pull $AWS_ECR_URL
-
   echo "Building Docker Image..."
   docker build -t $REPO_SLUG .
 
