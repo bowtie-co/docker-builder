@@ -45,6 +45,15 @@ if should_deploy_branch $BUILD_BRANCH; then
 
   # Build docker image
   # TODO: Use Dockerfile (other args) from config (sls-ci?)
+  # build-arg list
+  # cache-from strings
+  # file string
+  # label list
+  # no-cache
+  # pull
+  # security-opt strings
+  # tag list
+  # target
   echo "Building Docker Image..."
   docker build -t $REPO_SLUG .
 
