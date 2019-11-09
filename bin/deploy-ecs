@@ -48,7 +48,7 @@ if should_deploy_branch $BUILD_BRANCH; then
 
   # Pull latest from ECR (act as cache if no changes)
   echo "Pulling Docker Image..."
-  docker pull $AWS_ECR_URL
+  docker pull $AWS_ECR_URL || echo "Failed to pull $AWS_ECR_URL:latest"
 
   # Build docker image
   # TODO: Use Dockerfile (other args) from config (sls-ci?)
