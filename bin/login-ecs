@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+# Log into ECR using awscli
+echo "Logging into ECR..."
+# Returns "docker login" command, the backticks will execute the result as another command
+`aws ecr get-login --no-include-email --region $AWS_REGION`
