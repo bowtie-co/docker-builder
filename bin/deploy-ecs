@@ -2,22 +2,35 @@
 
 set -e
 
-BUILD_TAG=${BUILD_NUMBER:-latest}
+# Default build tag (build number or latest)
+BUILD_TAG=${CODEBUILD_BUILD_NUMBER:-latest}
+
+# Build full ECR URL with given AWS ENV vars (account + region) and the REPO_SLUG
 AWS_ECR_URL=$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_SLUG
+
+# Current build source version (commit SHA, default latest)
 SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION:-latest}
 
+BUILD_PATH=${BUILD_PATH:-.}
+BUILD_OPTIONS=${BUILD_OPTIONS:-""}
+
+# Should deploy? (return 0 = yes, 1 = no)
 should_deploy_branch() {
+  # Current build is failing, don't deploy
   if [[ "$CODEBUILD_BUILD_SUCCEEDING" != "1" ]]; then
     return 1
   fi
 
+  # Deploy this build (set by sls-ci)
   if [[ "$DEPLOY_BUILD" == "1" ]]; then
     return 0
   fi
 
+  # Don't deploy by default
   return 1
 }
 
+# Helper to tag & push docker image (argument: tag = $1)
 tag_and_push() {
   echo "Tagging Docker Image: '$1' ..."
   docker tag $REPO_SLUG:latest $AWS_ECR_URL:$1
@@ -26,29 +39,42 @@ tag_and_push() {
   docker push $AWS_ECR_URL:$1
 }
 
+# Should we deploy this build?
 if should_deploy_branch $BUILD_BRANCH; then
+  # Log into ECR using awscli
   echo "Logging into ECR..."
+  # Returns "docker login" command, the backticks will execute the result as another command
   `aws ecr get-login --no-include-email --region $AWS_REGION`
 
-  echo "Building Docker Image..."
-  docker build -t $REPO_SLUG .
+  # Pull latest from ECR (act as cache if no changes)
+  echo "Pulling Docker Image..."
+  docker pull $AWS_ECR_URL || echo "Failed to pull $AWS_ECR_URL:latest"
 
+  # Build docker image
+  echo "Building Docker Image..."
+  docker build -t $REPO_SLUG $BUILD_PATH $BUILD_OPTIONS
+
+  # Push with BUILD_TAG (default tag)
   tag_and_push $BUILD_TAG
 
+  # If BUILD_TAG is not already "latest", also tag and push as "latest"
   if [ "$BUILD_TAG" != "latest" ]; then
     tag_and_push "latest"
   fi
 
-  if [ ! -z "$BUILD_RELEASE" ]; then
-    tag_and_push $BUILD_RELEASE
-  fi
-
+  # Tag source version, commit SHA (unless "latest")
   if [ "$SOURCE_VERSION" != "latest" ]; then
     tag_and_push $SOURCE_VERSION
   fi
 
-  if [ "$BUILD_TAG" != "latest" ]; then
-    tag_and_push "latest"
+  # Tag branch name (replace "/" with "-", slash would break docker tagging format)
+  if [ ! -z "$BUILD_BRANCH" ]; then
+    tag_and_push "${BUILD_BRANCH//\//-}"
+  fi
+
+  # Tag release
+  if [ ! -z "$BUILD_RELEASE" ]; then
+    tag_and_push $BUILD_RELEASE
   fi
 
   echo "Finished!"
