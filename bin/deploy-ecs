@@ -3,7 +3,7 @@
 set -e
 
 # Default build tag (build number or latest)
-BUILD_TAG=${BUILD_NUMBER:-latest}
+BUILD_TAG=${CODEBUILD_BUILD_NUMBER:-latest}
 
 # Build full ECR URL with given AWS ENV vars (account + region) and the REPO_SLUG
 AWS_ECR_URL=$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_SLUG
