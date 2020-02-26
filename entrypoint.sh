@@ -1,9 +1,6 @@
 #!/bin/sh
 
-nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay&
-
-sleep 2
-
-timeout -t 15 sh -c "until docker info; do echo .; sleep 1; done"
+# Attempt to initialize Docker daemon during entrypoint (skipped during CodeBuild, should be included in buildspec.yml)
+$BOWTIE_BIN/docker-init
 
 exec "$@"
