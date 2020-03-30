@@ -2,6 +2,22 @@
 
 set -e
 
+GIT_BRANCH="master"
+GIT_USER_NAME="Unknown"
+GIT_USER_EMAIL="Unknown"
+
+if [[ -d .git ]]; then
+  GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  GIT_USER_NAME=$(git config --get user.name)
+  GIT_USER_EMAIL=$(git config --get user.name)
+fi
+
+# Current build source version (commit SHA, default latest)
+SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION:-latest}
+
+# AWS_BUCKET_NAME=bowtie-ci-builds-testing
+# AWS_SITE_BUCKET_NAME=bowtie-static-site-sa-east-1-example
+
 # Rename expected vars
 SITE_BUCKET=$AWS_SITE_BUCKET_NAME
 BUILD_BUCKET=$AWS_BUCKET_NAME
@@ -9,18 +25,20 @@ BUILD_BUCKET=$AWS_BUCKET_NAME
 # Default build tag (build number or latest)
 BUILD_TAG=${CODEBUILD_BUILD_NUMBER:-latest}
 
-# Current build source version (commit SHA, default latest)
-SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION:-latest}
-
-BUILD_PATH=${BUILD_PATH:-.}
+BUILD_PATH=${BUILD_PATH:-dist}
 BUILD_PUSH=${BUILD_PUSH:-sync}
+BUILD_BRANCH=${BUILD_BRANCH:-$GIT_BRANCH}
 BUILD_OPTIONS=${BUILD_OPTIONS:-"--delete"}
 
-DEPLOY_ENV=${DEPLOY_ENV:-"staging live"}
+DEPLOY_ENV=${DEPLOY_ENV:-"staging latest"}
 DEPLOY_TAG=${DEPLOY_TAG:-$BUILD_TAG}
+# TODO: Remove hardcoded default
+DEPLOY_DIST=${DEPLOY_DIST:-""}
+DEPLOY_PATH=${DEPLOY_PATH:-'/*'}
 
 # Should deploy? (return 0 = yes, 1 = no)
 should_deploy_branch() {
+  return 0
   # Current build is failing, don't deploy
   if [[ "$CODEBUILD_BUILD_SUCCEEDING" != "1" ]]; then
     return 1
@@ -65,18 +83,18 @@ if should_deploy_branch $BUILD_BRANCH; then
   # aws s3 ls s3://$SITE_BUCKET
 
   # Push with BUILD_TAG (default tag)
-  push_build_version $BUILD_TAG
+  # push_build_version $BUILD_TAG
 
   DEPLOY_TAG=${DEPLOY_TAG:-$BUILD_TAG}
-
-  # # If BUILD_TAG is not already "latest", also tag and push as "latest"
-  # if [ "$BUILD_TAG" != "latest" ]; then
-  #   push_build_version "latest"
-  # fi
 
   # Tag source version, commit SHA (unless "latest")
   if [ "$SOURCE_VERSION" != "latest" ]; then
     push_build_version $SOURCE_VERSION
+  fi
+
+  # Tag build number (unless "latest")
+  if [ "$BUILD_TAG" != "latest" ]; then
+    push_build_version $BUILD_TAG
   fi
 
   # Tag branch name (replace "/" with "-", slash would break s3 path format)
@@ -101,6 +119,11 @@ if should_deploy_branch $BUILD_BRANCH; then
 
     deploy_build_version $DEPLOY_TAG $env
   done
+
+  if [[ "$DEPLOY_DIST" != "" ]]; then
+    # aws cloudfront create-invalidation --distribution-id $DEPLOY_DIST --path $DEPLOATH
+    aws cloudfront create-invalidation --distribution-id $DEPLOY_DIST --path "/*"
+  fi
 
   echo "Finished!"
 else
