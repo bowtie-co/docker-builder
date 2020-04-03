@@ -57,10 +57,10 @@ if should_deploy_branch $BUILD_BRANCH; then
   # Push with BUILD_TAG (default tag)
   tag_and_push $BUILD_TAG
 
-  # If BUILD_TAG is not already "latest", also tag and push as "latest"
-  if [ "$BUILD_TAG" != "latest" ]; then
-    tag_and_push "latest"
-  fi
+  # # If BUILD_TAG is not already "latest", also tag and push as "latest"
+  # if [ "$BUILD_TAG" != "latest" ]; then
+  #   tag_and_push "latest"
+  # fi
 
   # Tag source version, commit SHA (unless "latest")
   if [ "$SOURCE_VERSION" != "latest" ]; then
@@ -75,6 +75,11 @@ if should_deploy_branch $BUILD_BRANCH; then
   # Tag release
   if [ ! -z "$BUILD_RELEASE" ]; then
     tag_and_push $BUILD_RELEASE
+
+    # If BUILD_TAG is not already "latest", also tag and push as "latest"
+    if [ "$BUILD_TAG" != "latest" ]; then
+      tag_and_push "latest"
+    fi
   fi
 
   echo "Finished!"
