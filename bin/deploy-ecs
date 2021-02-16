@@ -6,7 +6,8 @@ set -e
 BUILD_TAG=${CODEBUILD_BUILD_NUMBER:-latest}
 
 # Build full ECR URL with given AWS ENV vars (account + region) and the REPO_SLUG
-AWS_ECR_URL=$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_SLUG
+AWS_ECR_BASE=$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com
+AWS_ECR_URL=$AWS_ECR_BASE/$REPO_SLUG
 
 # Current build source version (commit SHA, default latest)
 SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION:-latest}
@@ -43,8 +44,7 @@ tag_and_push() {
 if should_deploy_branch $BUILD_BRANCH; then
   # Log into ECR using awscli
   echo "Logging into ECR..."
-  # Returns "docker login" command, the backticks will execute the result as another command
-  `aws ecr get-login --no-include-email --region $AWS_REGION`
+  aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_BASE
 
   # Pull latest from ECR (act as cache if no changes)
   echo "Pulling Docker Image..."
