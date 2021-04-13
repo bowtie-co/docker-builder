@@ -3,13 +3,9 @@
 set -e
 
 GIT_BRANCH="master"
-GIT_USER_NAME="Unknown"
-GIT_USER_EMAIL="Unknown"
 
 if [[ -d .git ]]; then
   GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  GIT_USER_NAME=$(git config --get user.name)
-  GIT_USER_EMAIL=$(git config --get user.name)
 fi
 
 # Current build source version (commit SHA, default latest)
