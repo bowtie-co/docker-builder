@@ -26,7 +26,7 @@ BUILD_PUSH=${BUILD_PUSH:-sync}
 BUILD_BRANCH=${BUILD_BRANCH:-$GIT_BRANCH}
 BUILD_OPTIONS=${BUILD_OPTIONS:-"--delete"}
 
-DEPLOY_ENV=${DEPLOY_ENV:-"staging latest"}
+DEPLOY_ENV=${DEPLOY_ENV:-""}
 DEPLOY_TAG=${DEPLOY_TAG:-$BUILD_TAG}
 # TODO: Remove hardcoded default
 DEPLOY_DIST=${DEPLOY_DIST:-""}
@@ -110,11 +110,13 @@ if should_deploy_branch $BUILD_BRANCH; then
     fi
   fi
 
-  for env in $DEPLOY_ENV; do
-    echo "Deploy to ENV: '$env' ..."
+  if [[ "$DEPLOY_ENV" != "" ]]; then
+    for env in $DEPLOY_ENV; do
+      echo "Deploy to ENV: '$env' ..."
 
-    deploy_build_version $DEPLOY_TAG $env
-  done
+      deploy_build_version $DEPLOY_TAG $env
+    done
+  fi
 
   if [[ "$DEPLOY_DIST" != "" ]]; then
     # aws cloudfront create-invalidation --distribution-id $DEPLOY_DIST --path $DEPLOATH
