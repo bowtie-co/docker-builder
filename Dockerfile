@@ -1,7 +1,7 @@
 FROM docker:dind
 
 ENV BOWTIE_BIN /bowtie/bin
-ENV GLIBC_VER=2.31-r0
+ENV GLIBC_VER=2.35-r0
 
 RUN apk add --no-cache \
     # Core Dependencies
