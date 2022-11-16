@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+AWS_ECR_BASE=$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com
+
+# Log into ECR using awscli
+echo "Logging into ECR..."
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_BASE

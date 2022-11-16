@@ -1,0 +1,30 @@
+#!/bin/bash
+
+dockerCmd=${1:-info}
+waitLimit=${2:-10}
+waitInterval=${3:-1}
+
+waitTry=0
+waitCmd="docker $dockerCmd"
+
+echo "Waiting ${waitLimit}s for Docker (via: '$waitCmd') ..."
+
+data=$($waitCmd > /dev/null)
+resp=$?
+
+while [ "$resp" != "0" ]; do
+  sleep $waitInterval
+
+  data=$($waitCmd)
+  resp=$?
+
+  waitTry=$(( $waitTry + 1))
+
+  if [ $waitTry -gt $waitLimit ]; then
+    echo "FAILED: Waited ${waitTry}s for Docker => ErrCode: $resp (via '$waitCmd')"
+    echo $data
+    exit $resp
+  fi
+done
+
+echo "Docker is ready after ${waitTry}s"
